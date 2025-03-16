@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useRef, useEffect } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -27,7 +26,24 @@ export default function AIChatbot() {
   ])
   const [input, setInput] = useState("")
   const [isTyping, setIsTyping] = useState(false)
+  const [healthData, setHealthData] = useState({})
   const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    async function fetchHealthData() {
+      try {
+        const response = await fetch("http://localhost:3001/getLatestHealthData")
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`)
+        }
+        const data = await response.json()
+        setHealthData(data || {})
+      } catch (error) {
+        console.error("Error fetching health data:", error)
+      }
+    }
+    fetchHealthData()
+  }, [])
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -37,10 +53,9 @@ export default function AIChatbot() {
     scrollToBottom()
   }, [messages])
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (input.trim() === "") return
 
-    // Add user message
     const userMessage: Message = {
       id: Date.now().toString(),
       content: input,
@@ -52,26 +67,29 @@ export default function AIChatbot() {
     setInput("")
     setIsTyping(true)
 
-    // Simulate AI response after a delay
-    setTimeout(() => {
-      const responses = [
-        "Based on Ayurvedic principles, I recommend increasing your intake of warm, cooked foods to balance your Vata dosha.",
-        "Your symptoms suggest a Pitta imbalance. Try incorporating cooling herbs like coriander and mint into your diet.",
-        "For better sleep, Ayurveda suggests a warm cup of milk with a pinch of nutmeg before bedtime.",
-        "Regular oil massage (Abhyanga) with sesame oil can help ground your energy and reduce stress.",
-        "Your health metrics indicate good overall balance, but your Kapha could use some stimulation through regular exercise.",
-      ]
+    try {
+      const response = await fetch("http://localhost:3001/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt: `User's health details: ${JSON.stringify(healthData)}\nUser query: ${input}`,
+        }),
+      })
 
+      const result = await response.json()
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
-        content: responses[Math.floor(Math.random() * responses.length)],
+        content: result.response,
         role: "assistant",
         timestamp: new Date(),
       }
 
       setMessages((prev) => [...prev, aiMessage])
+    } catch (error) {
+      console.error("Error communicating with AI service:", error)
+    } finally {
       setIsTyping(false)
-    }, 1500)
+    }
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -118,18 +136,9 @@ export default function AIChatbot() {
             </Avatar>
             <div className="chat-bubble-ai px-4 py-2 rounded-lg">
               <div className="flex space-x-1">
-                <div
-                  className="h-2 w-2 bg-gray-400 rounded-full animate-bounce"
-                  style={{ animationDelay: "0ms" }}
-                ></div>
-                <div
-                  className="h-2 w-2 bg-gray-400 rounded-full animate-bounce"
-                  style={{ animationDelay: "300ms" }}
-                ></div>
-                <div
-                  className="h-2 w-2 bg-gray-400 rounded-full animate-bounce"
-                  style={{ animationDelay: "600ms" }}
-                ></div>
+                <div className="h-2 w-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></div>
+                <div className="h-2 w-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></div>
+                <div className="h-2 w-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "600ms" }}></div>
               </div>
             </div>
           </div>
@@ -161,4 +170,3 @@ export default function AIChatbot() {
     </Card>
   )
 }
-

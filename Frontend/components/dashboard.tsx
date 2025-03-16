@@ -14,24 +14,27 @@ export default function Dashboard() {
   const [scanning, setScanning] = useState(false)
   const [progress, setProgress] = useState(0)
   const [healthScore, setHealthScore] = useState(78)
+  const [healthData, setHealthData] = useState({})
+  const [error, setError] = useState(null)   
 
   // Simulate scanning animation
   useEffect(() => {
-    if (scanning) {
-      const timer = setInterval(() => {
-        setProgress((prev) => {
-          if (prev >= 100) {
-            clearInterval(timer)
-            setScanning(false)
-            return 100
-          }
-          return prev + 2
-        })
-      }, 50)
-
-      return () => clearInterval(timer)
+    async function fetchHealthData() {
+      try {
+        const response = await fetch("http://localhost:3001/getLatestHealthData")
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`)
+        }
+        const data = await response.json()
+        setHealthData(data || {})
+      } catch (error) {
+        console.error("Error fetching health data:", error)
+        setError("Failed to load health data")
+      }
     }
-  }, [scanning])
+    fetchHealthData()
+  }, [])
+  
 
   const startScan = () => {
     setScanning(true)
@@ -173,7 +176,7 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <MetricCard
               title="Heart Rate"
-              value="72"
+              value={healthData.heartrate || "N/A"}
               unit="bpm"
               icon={<Heart className="h-5 w-5 text-red-500" />}
               status="normal"
@@ -181,7 +184,7 @@ export default function Dashboard() {
             />
             <MetricCard
               title="Blood Pressure"
-              value="118/78"
+              value={healthData.bloodpressure || "N/A"}
               unit="mmHg"
               icon={<Activity className="h-5 w-5 text-blue-500" />}
               status="normal"
@@ -189,7 +192,7 @@ export default function Dashboard() {
             />
             <MetricCard
               title="Oxygen Saturation"
-              value="98"
+              value={healthData.oxygensaturation || "N/A"}
               unit="%"
               icon={<Droplet className="h-5 w-5 text-cyan-500" />}
               status="excellent"
@@ -202,7 +205,7 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <MetricCard
               title="Energy Level"
-              value="82"
+              value={healthData.energy || "N/A"}
               unit="%"
               icon={<Zap className="h-5 w-5 text-yellow-500" />}
               status="good"
@@ -210,7 +213,7 @@ export default function Dashboard() {
             />
             <MetricCard
               title="Metabolism"
-              value="1,850"
+              value={healthData.metabolism || "N/A"}
               unit="cal/day"
               icon={<Flame className="h-5 w-5 text-orange-500" />}
               status="normal"
@@ -218,7 +221,7 @@ export default function Dashboard() {
             />
             <MetricCard
               title="Sleep Quality"
-              value="7.5"
+              value={healthData.sleepquality || "N/A"}
               unit="hrs"
               icon={<Activity className="h-5 w-5 text-indigo-500" />}
               status="good"
@@ -231,7 +234,7 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <MetricCard
               title="Stress Level"
-              value="32"
+              value={healthData.stresslevel|| "N/A"}
               unit="%"
               icon={<Brain className="h-5 w-5 text-purple-500" />}
               status="low"
@@ -239,7 +242,7 @@ export default function Dashboard() {
             />
             <MetricCard
               title="Focus"
-              value="78"
+              value={healthData.focus || "N/A"}
               unit="%"
               icon={<Activity className="h-5 w-5 text-blue-500" />}
               status="good"
@@ -247,7 +250,7 @@ export default function Dashboard() {
             />
             <MetricCard
               title="Mindfulness"
-              value="65"
+              value={healthData.mindfulness || "N/A"}
               unit="%"
               icon={<Brain className="h-5 w-5 text-teal-500" />}
               status="normal"
@@ -260,7 +263,7 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <MetricCard
               title="Vata (Air)"
-              value="40"
+              value={healthData.vatta || "N/A"}
               unit="%"
               icon={<Activity className="h-5 w-5 text-blue-300" />}
               status="balanced"
@@ -268,7 +271,7 @@ export default function Dashboard() {
             />
             <MetricCard
               title="Pitta (Fire)"
-              value="35"
+              value={healthData.pitta || "N/A"}
               unit="%"
               icon={<Flame className="h-5 w-5 text-orange-500" />}
               status="balanced"
@@ -276,7 +279,7 @@ export default function Dashboard() {
             />
             <MetricCard
               title="Kapha (Earth)"
-              value="25"
+              value={healthData.kapha || "N/A"}
               unit="%"
               icon={<Droplet className="h-5 w-5 text-green-500" />}
               status="balanced"
